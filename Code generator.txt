@@ -1,0 +1,45 @@
+The class code take care of coding the fileId and the type of the media inside a shorter and single string
+
+The first 10 bits indicate how many media are codified in that string
+
+That we go to the data of each media:
+First 2 bits indicate the type:
+	
+	00 -> 0 -> 1 -> Audio
+	01 -> 1 -> 2 -> Document
+	10 -> 2 -> 3 -> Photo
+	11 -> 3 -> 4 -> Video
+	
+The next 6 bits indicate how many character there are in the fileId
+
+Next there are the real character, codified in this way:
+
+	000 000              ->  0        ->  '-'
+	000 001  -  001 010  ->  1  - 10  ->  '0' - '9'
+	001 011  -  100 100  ->  11 - 36  ->  'A' - 'Z'
+	100 101  -  111 110  ->  37 - 62  ->  'a' - 'z'
+	111 111              ->  63       ->  '_'
+	
+After this there are some 0 for fill the String and make its bit number a multiple of 8
+	
+	
+String example with two media, one is a photo with a fileId of "2A" and the other one is a Document with a fileId of "-b_a"
+
+000 000 001 0    MediaNo = 2
+
+10               Type = Photo
+000 010          FileId lenght = 2
+000 011          character[0] = '2'
+100 100          character[1] = 'A'
+
+01               Type = Document
+000 100          FileId lenght = 4
+000 000          character[0] = '-'
+100 110          character[1] = 'b'
+111 111          character[2] = '_'
+100 101          character[3] = 'a'
+
+00               Some zeros for make the string bit a multiple of 8
+
+Here's the complete string:
+0000000010  10 000010 000011 100100  01 000100 000000 100110 111111 100101  00
