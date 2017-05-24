@@ -5,11 +5,14 @@ import java.util.ArrayList;
 public class Code {
 	private ArrayList<Media> m = new ArrayList<Media>();
 	String raw;
-	//private String code, raw;
+
 	
-	/*public void setCode(String c){
-		code = c;
-	}*/
+	public boolean mediaExist(Media media){
+		int i = 0;
+		boolean b = true;
+		while(i < m.size() && b) if(m.get(i).getFileId().equals(media.getFileId())) b = false;
+		return !b;
+	}
 	public String getRaw(){
 		return raw;
 	}
@@ -19,9 +22,6 @@ public class Code {
 	public void appendMedia(Media media){
 		m.add(media);
 	}
-	/*public String getCode(){
-		return code;
-	}*/
 	public Media getMedia(int index){
 		return m.get(index);
 	}
@@ -30,31 +30,31 @@ public class Code {
 	}
 	
 	public void calcoulateRaw(){
-		String bin = fixLChar(Integer.toString(m.size(), 2), 2);
+		String bin = fixLChar(Integer.toString(m.size(), 2), 10);
 		for(int i = 0; i < m.size(); i++)
+			
 			bin = bin +
 					fixLChar(Integer.toString(m.get(i).getType(), 2), 2) +
 					fixLChar(Integer.toString(m.get(i).getFileId().length(), 2), 6) +
 					getBin(m.get(i).getFileId());
+		
 		toArray(fixRChar(bin, 8));
 	}
+	
 	public void calcoulateMedia(){
 		String bin = fromArray();
 		m.clear();
-		int mediaNo = Integer.parseInt(bin.substring(0, 2), 2);
-		int position = 2;
+		int mediaNo = Integer.parseInt(bin.substring(0, 10), 2);
+		int position = 10;
 		for(int i = 0; i < mediaNo; i++){
-			//System.out.println(position);
+
 			m.add(new Media());
 			m.get(i).setType((byte) Integer.parseInt(bin.substring(position++, ++position), 2));
 			
-			//System.out.println(bin.substring(position, position + 6) + " " + position);
 			int charNo = Integer.parseInt(bin.substring(position, position + 6), 2);
 			position += 6;
 			String fileId = "";
 			for(int n = 0; n < charNo; n++){
-				//System.out.println(position + " " + n + " " + charNo);
-				//System.out.println(bin.substring(position, position + 6) + " " + position);
 				fileId += getChar(Integer.parseInt(bin.substring(position, position + 6), 2));
 				position += 6;
 			}
@@ -84,7 +84,6 @@ public class Code {
 			raw += (char) Integer.parseInt(bin.substring(position, position + 8), 2);
 			position += 8;
 		}
-		//System.out.println(bin + "\n" + raw);
 	}	
 	private String getBin(String s){
 		String bin = "";

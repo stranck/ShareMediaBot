@@ -57,6 +57,11 @@ public class Media {
     }
     public String toString(){
     	String[] types = {"audio", "document", "photo", "video"};
-    	return "Media{typeId=" + type + ", typeName='" + types[type - 1] + "', fileId='" + fileId + "'}";
+    	
+    	return "Media{"
+    				+ "typeId=" + type + ", "
+    				+ "typeName='" + types[type - 1] + "', "
+    				+ "fileId='" + fileId + "'"
+    			+ "}";
     }
 }

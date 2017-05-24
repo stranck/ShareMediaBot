@@ -14,7 +14,7 @@ import com.pengrad.telegrambot.response.GetMeResponse;
 
 public class Settings {
 	
-	private String tToken, /*bToken,*/ dir;
+	private String tToken, dir;
 	private User botUser;
 	
 	public boolean loadSettings() throws IOException{
@@ -24,7 +24,6 @@ public class Settings {
 			Files.write(Paths.get("config.json"), (
 					"{\n" +
 					"    \"telegramToken\" : \"INSERIT YOUR TOKEN HERE\",\n" +
-					//"    \"bitlyToken\" : \"INSERIT YOUR TOKEN HERE\"" +
 					"}"
 				).getBytes(), CREATE);
 			return false;
@@ -32,7 +31,6 @@ public class Settings {
 		
 		JSONObject config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
 		tToken = config.getString("telegramToken");
-		//bToken = config.getString("bitlyToken");
 		dir = System.getProperty("user.dir") + File.separator;
 		return true;
 	}
@@ -49,9 +47,6 @@ public class Settings {
 	public String getTelegramToken(){
 		return tToken;
 	}
-	/*public String getBitlyToken(){
-		return bToken;
-	}*/
 	public String getDirectory(){
 		return dir;
 	}

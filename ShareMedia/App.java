@@ -3,6 +3,8 @@ package bot.ShareMedia;
 import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -19,7 +21,9 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
+import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.BaseRequest;
+import com.pengrad.telegrambot.request.EditMessageText;
 import com.pengrad.telegrambot.request.GetMe;
 import com.pengrad.telegrambot.request.GetUpdates;
 import com.pengrad.telegrambot.request.SendAudio;
@@ -89,24 +93,38 @@ public class App{
 								
 							} else  id = generateToken();
 						} else id = generateToken();
+
+						if(c.getMediaNo() < 1024){
 							
-						Media m = new Media(msg);
-						LOGGER.finest("[" + msg.from().id() + "] " + "Media data: " + m.toString());
+							Media m = new Media(msg);
+							LOGGER.finest("[" + msg.from().id() + "] " + "Media data: " + m.toString());
 						
-						c.appendMedia(m);
-						c.calcoulateRaw();
-						Files.write(Paths.get("codes" + File.separator + id), c.getRaw().getBytes(), CREATE);
+							if(!c.mediaExist(m)) c.appendMedia(m); 
+								else LOGGER.warning("[" + msg.from().id() + "] Media already exist");
+							c.calcoulateRaw();
+							Files.write(Paths.get("codes" + File.separator + id), c.getRaw().getBytes(), CREATE);
 						
-						if(m.getType() != 0){							
-							bot.execute(new SendMessage(msg.chat().id().toString(), 
-									"Done!\n\n"
-									+ "Now share it with your friend :D\n"
-									//+ "Short link: " + bt.getShortLink(lnk) + " (Powered by BitLy)\n"
-									+ "Link: https://t.me/ShareMediaBot?start=" + id + "\n\n"
-									+ "If you want to append more media to this link send it replying to this message")
-								.disableWebPagePreview(true));
-							
-						}
+							if(m.getType() != 0){
+								if(msg.replyToMessage() != null && !msg.replyToMessage().text().contains("Done!"))
+									
+									bot.execute(new EditMessageText(msg.chat().id().toString(), msg.replyToMessage().messageId(), 
+											"*Link:* https://t.me/ShareMediaBot?start=" + id + "\n\n"
+											+ "Append media to this link by replying to this message"
+											+ " _(" + (1023 - c.getMediaNo()) + " media remain for this link)_")
+										.disableWebPagePreview(true).parseMode(ParseMode.Markdown));
+								
+								else bot.execute(new SendMessage(msg.chat().id().toString(), 
+											"*Done!*\n\n"
+											+ "Now share it with your friend :D\n"
+											//+ "Short link: " + bt.getShortLink(lnk) + " (Powered by BitLy)\n"
+											+ "*Link:* https://t.me/ShareMediaBot?start=" + id + "\n\n"
+											+ "If you want to append more media to this link send it replying to this message"
+											+ " _(" + (1023 - c.getMediaNo()) + " media remain for this link)_")
+										.disableWebPagePreview(true).parseMode(ParseMode.Markdown));
+							}
+						} else bot.execute(new SendMessage(msg.chat().id().toString(), "*ERROR:* "
+										+ "Can't append more than 1023 media to a single link :(\n\n\n"
+										+ "_(WTF How did you arrived to this limit lmao)_").parseMode(ParseMode.Markdown));
 					} else {
 						
 						LOGGER.info("[" + msg.from().id() + "] " + msg.text());
@@ -126,23 +144,35 @@ public class App{
 							
 							if(msg.text().equalsIgnoreCase("/start")) bot.execute(new SendMessage(
 									msg.from().id().toString(),
-									"Heya! Welcome in " + st.getBot().firstName() + "! :D\n" +
+									"*Heya*! Welcome in " + st.getBot().username() + "! :D\n" +
 									"With this bot you can easy share with your friends:\n" +
-									"- Photo\n" +
-									"- Video\n" +
-									"- Files\n" +
-									"- Music\n\n" +
-									"Try me by sending a media! :)"));
+									"*-* Photo\n" +
+									"*-* Video\n" +
+									"*-* Files\n" +
+									"*-* Music\n\n" +
+									"*Try me by sending a media or using /media!* :)").parseMode(ParseMode.Markdown));
+							
+							if(msg.text().equalsIgnoreCase("/share")){
+								String id = generateToken();
+								Code c = new Code();
+								c.calcoulateRaw();
+								Files.write(Paths.get("codes" + File.separator + id), c.getRaw().getBytes(), CREATE);
+								bot.execute(new SendMessage(msg.chat().id().toString(), 
+										"*Link:* https://t.me/ShareMediaBot?start=" + id + "\n\n"
+										+ "Append media to this link by replying to this message"
+										+ " _(1023 media remain for this link)_")
+									.disableWebPagePreview(true).parseMode(ParseMode.Markdown));
+							}
 							if(msg.text().equalsIgnoreCase("/github")) bot.execute(new SendMessage(
 									msg.chat().id().toString(),
 									"Hope you enjoy my codes!").replyMarkup(
 										new InlineKeyboardMarkup(
 											new InlineKeyboardButton[]{
-													new InlineKeyboardButton("Github").url("url")
+													new InlineKeyboardButton("Github").url("https://github.com/stranck/ShareMediaBot")
 											})));
 							if(msg.text().equalsIgnoreCase("/news")) bot.execute(new SendMessage(
 									msg.chat().id().toString(),
-									"News (in italian) of all my bots").replyMarkup(
+									"News _(in italian)_ of all my bots").parseMode(ParseMode.Markdown).replyMarkup(
 										new InlineKeyboardMarkup(
 											new InlineKeyboardButton[]{
 													new InlineKeyboardButton("Multychat News").url("https://t.me/MultychatNews")
@@ -152,7 +182,7 @@ public class App{
 					}
 				}
     		} catch(Exception e){
-    			LOGGER.warning(e.toString());
+    			LOGGER.warning(getThrow(e));
     		}
     	}
     }
@@ -204,38 +234,12 @@ public class App{
     	return id;
     }
     
-    public static void testCodeClass(){
-    	Code c = new Code();
-    	Media m1 = new Media();
-    	Media m2 = new Media();
-    	//Media m3 = new Media();
-    	//m1.setFileId("File_id_of_media_1");
-    	//m2.setFileId("Media_2_file_id");
-    	//m3.setFileId("dio cane");
-    	//m1.setFileId("a");
-    	//m2.setFileId("b");
-    	m1.setFileId("BQADBAADBwYAAioYBgMX4OufhYAWWAI");
-    	m2.setFileId("BQADBAADBAYAAioYBgM2dOxt9mImxQI");
-    	m1.setType((byte) 1);
-    	m2.setType((byte) 2);
-    	//m3.setType((byte) 3); 
-    	c.appendMedia(m1);
-    	c.appendMedia(m2);
-    	//c.appendMedia(m3);
-    	c.calcoulateRaw();
-    	testCodeClassPrint(c);
-    	c.calcoulateMedia();
-    	testCodeClassPrint(c);
-    	
-    }
-    public static void testCodeClassPrint(Code c){
-    	System.out.println(
-    			"\n Media code: " + c.getRaw() + 
-    			"\n Media no: " + c.getMediaNo() +
-    			"\n Media 1 type: " + c.getMedia(0).getType() +
-    			"\n Media 2 type: " + c.getMedia(1).getType() +
-    			"\n Media 1 fileId: " + c.getMedia(0).getFileId() +
-    			"\n Media 2 fileId: " + c.getMedia(1).getFileId()
-    			);
-    }
+	public static String getThrow(Exception e){
+		
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		return sw.toString();
+		
+	}
 }
